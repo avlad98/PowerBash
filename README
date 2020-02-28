@@ -1,0 +1,200 @@
+VLAD ANDREI-ALEXANDRU
+321CB
+
+=================================== TEMA 3 ===================================
+================================= POWER BASH =================================
+================================== -README- ==================================
+
+
+	Pentru implementarea acestei teme am ales design pattern-urile:
+	- Composite si Singleton pentru formarea sistemului de fisiere;
+	- Command, Singleton si Factory pentru setarea si executarea comenzilor
+	- Singleton pentru clasa Argument (clasa special folosita pentru vizibilitatea
+	argumentelor in clasele tuturor comenzilor fara a le transmite ca parametrii).
+
+
+Clasa "Main":
+		In aceasta clasa deschid fisierele de input, output si errors tratand
+	exceptiile care pot aparea astfel incat sa pot salva continutul pana la eroare.
+		Pentru accesibilitatea scrierii in fisiere am ales sa folosesc variabile
+	statice pentru output si errors. De asemenea, mai exista si un int care tine
+	indexul comenzii curente. Aceasta variabila statica este vizibila in toate
+	clasele din acelasi pachet (default).
+		Inainte de parsarea comenzilor din input se instantiaza o singura data
+	(Singleton) sistemul de fisiere, argumentul (clasa ce tine o lista pentru
+	argumentele din comanda curenta) si o comanda universala care va fi setata in
+	functie de input la un anumit timp si executata. (Mai multe detalii in clasa 
+	CommandExec - asemanatoare exemplelor de TVRemote din alte tutoriale).
+		La fiecare linie din input se determina comanda si argumentele,
+	se seteaza comanda de executat, se scrie in fisierele errors si output 
+	numarul comenzii curente si se reseteaza folderul temporar de navigare prin
+	sistemul de fisiere.
+
+Clasa "Argument":
+		Aceasta clasa retine intr-o lista argumentele comenzii curente.
+	Se foloseste Singleton pentru instantiere (nu este nevoie de mai multe
+	instante) si se reseteaza argumentele la fiecare comanda noua. 
+		Aceasta clasa contine gettere pentru toata lista de argumente cat
+	si pentru argumentul de pe pozitia i din lista (primul argument este mereu
+	numele comenzii). 
+
+Enum "EnumCommands":
+		Este o simpla enumerare a tuturor comenzilor implementate in tema.
+
+Interfata "Command":
+		Este o simpla interfata care face parte din design pattern-ul "Command"
+	si are ca unica metoda "void execute()" care arunca exceptia IOException
+	atunci cand o comanda nu reuseste sa scrie in fisierele de output sau errors.
+		Aceasta interfata este implementata de toate comenzile implementate in 
+	tema.
+
+Clasa "CommandExec":
+		Este o clasa care reprezinta o comanda la modul general. Este implementata
+	folosind "Singleton" si contine o comanda de un anumit tip la un anumit moment
+	care este setata in main pe baza liniei curente citite din input. Aceasta se 
+	executa in main apeland functia de executie a comenzii pe care o contine.
+
+Clasa "CommandFactory":
+		Aceasta clasa reprezinta o componenta a design pattern-ului "Factory".
+		Contine o singura metoda statica din care se returneaza o instanta 
+	a comenzii care trebuie executata corespunzatoare liniei curente din fisierul
+	de input. Pe baza enumerarii "EnumCommands" se intoarce o instanta a comenzii
+	specifice.
+
+Interfata "FSNode":
+		Aceasta interfata contine toate metodele de care am avut nevoie pentru 
+	operarea pe fisiere si foldere. De asemenea, este o componenta a design
+	pattern-ului "Composite" din alcatuirea sistemului de fisiere.
+
+Clasa "FSFile":
+		Aceasta clasa este o componenta a design pattern-ului "Composite" pentru 
+	crearea arborelui sistemului de fisiere.
+ 		Aceasta clasa reprezinta tipul "Fisier" care implementeaza un Nod (la
+ 	general).
+	De asemenea, aceasta clasa implementeaza clonarea (utila la comanda "Cp").
+		Metodele cele mai utile sunt getPath() si getParentPath(). Acestea 
+	se apeleaza recursiv pentru a obtine path-ul complet al fisierului.
+		In componenta acestei clase mai exista si alte metode care sunt
+	implementate din FSNode, dar nu sunt utile decat clasei FSFolder.
+
+Clasa "FSFolder":
+		Aceasta clasa este o componenta a design pattern-ului "Composite" pentru
+	crearea arborelui sistemului de fisiere.
+ 		Aceasta clasa reprezinta tipul "Folder" care extinde "File" (Am luat 
+ 	in considerare citatul UNIX: "Everything is a file".
+		De asemenea, aceasta clasa implementeaza clonarea (utila la comanda "Cp").
+		Pentru stocarea fisierelor si folderelor in continutul unei instante de
+	folder am ales structura de date TreeMap deoarece stocheaza obiecte dupa chei
+	in ordine alfabetica (fiind mult mai usor la afisarea continului acestora).
+		Metodele acestei clase sunt pentru:
+		- adaugarea in TreeMap a folderelor si fisierelor. Se va adauga daca nu
+	exista deja un obiect cu acelasi nume. Daca exista atunci metoda va intoarce
+	un cod de eroare (1);
+		- stergerea din TreeMap, asemanator cu adaugarea, se cauta obiectul dupa
+	nume si se sterge, iar daca nu exista se intoarce codul de eroare (1).
+		- findFile cauta in continutul acestei instante de folder fisierul sau
+	folderul cu numele dat ca parametru. Intoarce referinta catre fisier sau null
+	daca nu exista.
+		- resetParents este o metoda care reseteaza parintii fisierelor si
+	folderelor din interiorul acestei instante de folder (adica din continutul
+	sau). Resetarea se face in functie de parintii actuali (dupa atribuirea unui
+	nou parinte se vor recalcula toate legaturile din continutul acestui folder).
+		- clonarea se va face de forma "deep copy" insemnand ca se cloneaza lista
+	impreuna cu toate fisierele si folderele din interior recursiv.
+		- metoda care verifica daca instanta curenta este sau contine folderul
+	curent din sistemul de fisiere.
+		- metoda find care cauta un fisier sau folder in interiorul tuturor
+	folderelor din acest folder, inclusiv din folderul curent. 
+
+Clasa "FSManager":
+		Aceasta clasa face parte din design pattern-ul "Composite" reprezentand 
+	managerul tuturor instantelor de nod (fisiere sau foldere).
+ 		De asemenea aceasta clasa contine si folderul principal "root" impreuna
+ 	cu folderul curent. Pe langa acestea mai este si un folder temporar 
+ 	"virtualCurrent" cu care navighez prin sistemul de fisiere fara a "strica" 
+ 	ceva.
+ 		Aceasta clasa modeleaza pattern-ul "Singleton" deoarece nu trebuie 
+ 	create mai multe sisteme de fisiere in cadrul acestei teme (trebuie sa existe
+ 	decat un singur "root").
+ 		Metodele acestei clase sunt:
+ 	- stepBack() urca folderul temporar in arbore (spre root) un pas, iar daca
+ 	nu a reusit (a ajuns pe null) se va intoarce false (cod de eroare).
+ 	- goTo() seteaza folderul temporar pe folderul din calea data ca argument.
+ 	Daca nu a reusit parcurgerea se va returna un cod de eroare (1).
+ 	- getPathTo() este utila pentru obtinerea caii catre un fisier sau folder.
+ 	- getErrorMsg() calculeaza calea pentru a fi afisata in fisierul de erori.
+
+CLASELE PENTRU COMENZI:
+ 		Fiecare clasa pentru o comanda anume implementeaza interfata "Command",
+ 	contine un constructor gol (este folosit de "CommandFactory" pentru 
+ 	instantierea unei comenzi de un tip anume (pentru a putea fi executata
+ 	metoda execute() )) si metoda execute(). Implementarea metodei execute este
+ 	facuta corespunzator fiecarei comenzi. Fiecare comanda poate arunca o exceptie
+ 	daca scrierea in fisierele de output sau errors esueaza.
+
+"Cd":
+ 		In aceasta comanda iau path-ul si il impart in token-uri, navighez cu
+ 	folderul temporar la calea impartita deja in token-uri. Daca navigarea a
+ 	reusit modific folderul curent la folderul temporar. Daca nu a reusit atunci
+ 	scriu eroarea corespunzatoare.
+
+"Cp":
+ 		In aceasta comanda despart path-ul sursei si destinatiei in mai multe
+ 	bucati pentru simplitate si navighez pe rand cu folderul temporar catre
+ 	folderele sursa (folderul care contine sursa) si destinatie (chiar folderul 
+ 	in care se face copierea). Daca apar erori intr-una din navigari le afisez
+ 	corespunzator. Caut in sursa fisierul sau folderul dorit si il clonez.
+ 	(Daca nu exista afisez eroarea specifica). Daca obiectul de copiat este
+ 	folder atunci resetez si obiectele din continutul acestuia (pentru a nu
+ 	contine referinte la parintii vechi, iar la modificarea acestora de fapt
+ 	sa se modifice cumva alte fisiere sau foldere)
+
+"Ls":
+ 		In aceasta comanda verific cate argumente sunt date si tratez fiecare
+ 	caz in parte (cand nu exista argumente, cand exista un argument (determin
+ 	care din ele este (-R sau path)), cand exista doua argumente aflu doar
+ 	path-ul pentru ca stiu ca celalalt este -R). Dupa aflarea path-ului navighez
+ 	cu folderul temporar catre path si afisez eroarea in caz ca nu se gaseste.
+ 	Altfel afisez continutul folderului sau afisez recursiv si continutul
+ 	celorlalte foldere (cu ajutorul unor metode din aceasta clasa: 
+ 	displayContent() si recursiveDisplay() ).
+
+"Mkdir":
+ 		In aceasta comanda, asemanator ca la celelalte, despart argumentele
+ 	in mai multe token-uri sau String-uri si navighez catre folderul in care
+ 	trebuie creat noul folder (afisez erorile necesare daca exista), verific
+ 	daca deja exista un folder cu acelasi nume si afisez eroare corespunzatoare,
+ 	iar daca nu exista il creez si il adaug in folderul parinte refacand
+ 	legaturile necesare.
+
+"Mv":
+ 		Aceasta metoda executa comanda, iar daca scrierea in fisiere esueaza
+ 	se va arunca exceptia.
+    	Comportamentul acestei comenzi este asemanator cu cel al comenzii "Cp"
+    doar ca aici nu se va mai clona nodul, ci se va muta referinta in nou path,
+    iar din cel vechi va fi sters. De asemenea, se va muta si folderul curent 
+    odata cu mutarea instantei in noul path (daca nu apar erorile mentionate 
+    in PDF-ul temei) deoarece folderul curent este o referinta la aceasta 
+    instanta.
+
+"Pwd":
+		Aceasta comanda doar afiseaza in fisierul de output path-ul folderului
+	curent din sistemul de fisiere.
+
+"Rm":
+		Pentru implementarea acestei comenzi despart ca in celelalte comenzi
+	argumentele in token-uri si String-uri, navighez catre folderul care
+	contine fisierul sau folderul de sters (scriu eroarea daca nu se gaseste
+	path-ul), caut fisierul sau folderul de sters (daca nu exista afisez
+	eroarea), iar daca exista il sterg din continutul folderului.
+	Inainte de stergere verific daca folderul de sters este sau contine 
+	folderul curent (caz in care nu se sterge nimic).
+
+"Touch":
+  		Aceasta metoda executa comanda, iar daca scrierea in fisiere esueaza 
+  	se va arunca exceptia IOException.
+    	Functionalitatea acestei comenzi este asemanatoare cu cea a comenzii
+    "Mkdir" doar ca se aplica pe fisiere.
+
+PUNCTAJ:
+	Pe masina locala, cat si pe vmchecker obtin 100/120 puncte.
